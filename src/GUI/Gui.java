@@ -1,16 +1,17 @@
 package GUI;
 
-
 import java.awt.Color;
 import java.awt.ComponentOrientation;
-import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
 import java.io.IOException;
 
 import javax.swing.JButton;
@@ -22,12 +23,15 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import com.sun.glass.events.WindowEvent;
+
 import Comunicar.Comunicar;
 
-public class Gui {
+public class Gui extends Thread {
 
 	private JFrame frame;
 	private JTextField txtNomeRobot;
@@ -50,33 +54,41 @@ public class Gui {
 
 	// Caixas de correio
 	private Comunicar inbox, gestor;
-	
+
 	// Check ligaçao robot
 	boolean robotOn = false;
-	
+
 	// Paths Processos / Variaveis
-	private final String[]  GESTOR = new String[] {"Java", "-jar", "S:/JAVA/exemplo/src/Gestor/Gestor.jar" };
-	private final String[]  VAGUEAR = new String[] {"Java", "-jar", "../Vaguear/Vaguear.jar" };
-	private final String[]  EVITAR = new String[] {"Java", "-jar", "../Evitar/Evitar.jar" };
-	
+	private final String[] GESTOR = new String[] { "Java", "-jar",
+			"S:\\ISEL\\3º Semestre\\FSO\\exemplo\\src\\Gestor\\Gestor.jar" };
+	private final String[] VAGUEAR = new String[] { "Java", "-jar",
+			"S:\\ISEL\\3º Semestre\\FSO\\exemplo\\src\\Vaguear\\Vaguear.jar" };
+	private final String[] EVITAR = new String[] { "Java", "-jar",
+			"S:\\ISEL\\3º Semestre\\FSO\\exemplo\\\\src\\Evitar\\Evitar.jar" };
+
 	private Process pGestor, pVaguear, pEvitar;
 
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					Gui window = new Gui();
-					window.frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});		
+		Gui window = new Gui();
+		window.frame.setVisible(true);
+		window.start();
 	}
 
+	public void run() {
+		for (;;) {
+			String msg = inbox.receberMsg();
+			decode(msg);
+			System.out.println("GUI [MSG]: " + msg);
+			try {
+				Thread.sleep(250);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	/**
 	 * Iniciar variaveis
@@ -100,7 +112,31 @@ public class Gui {
 		this.txtDistance.setText(String.valueOf(distance));
 
 	}
-	
+
+	private void decode(String message) {
+		String[] campos = message.split(";");
+		switch (Byte.parseByte(campos[1])) {
+		case Comunicar.OPEN:
+			switch (Byte.parseByte(campos[2])) {
+			case Comunicar.TRUE:
+				System.out.println("i'm probably working");
+				robotStatus(true);
+				break;
+			case Comunicar.FALSE:
+				robotStatus(false);
+				break;
+			default:
+				break;
+			}
+			break;
+		case Comunicar.CLOSE:
+			robotStatus(false);
+			break;
+		default:
+			break;
+		}
+	}
+
 	private ProcessBuilder buildProcess(byte process) {
 		String[] args = null;
 		switch (process) {
@@ -116,42 +152,70 @@ public class Gui {
 		default:
 			return null;
 		}
-		
+
 		ProcessBuilder processFinal = new ProcessBuilder(java.util.Arrays.asList(args));
 		processFinal.inheritIO();
 		processFinal.redirectErrorStream(true);
-		
+
 		return processFinal;
 	}
-	
+
+	private void connectRobot() {
+		if (name.equals("") || name == null || name.length() == 0) {
+			txtNomeRobot.setBackground(Color.RED);
+			logger("Nome do Robot vazio...");
+		} else if (pGestor == null) {
+			logger("Gestor está desligado...");
+		} else {
+			if (robotOn) {
+				gestor.enviarMsg(new byte[] { Comunicar.GUI, Comunicar.CLOSE }, Comunicar.EMPTY);
+			} else {
+				gestor.enviarMsg(new byte[] { Comunicar.GUI, Comunicar.OPEN }, new String[] { name });
+			}
+		}
+	}
+
+	private void robotStatus(boolean value) {
+		if (value) {
+			btnConectar.setText("Desligar");
+			lblConectado.setBackground(Color.green);
+			txtNomeRobot.setBackground(Color.white);
+			logger("Ligação ao Robot Concluída com sucesso!");
+			robotOn = true;
+		} else {
+			btnConectar.setText("Ligar");
+			lblConectado.setBackground(Color.red);
+			logger("Ligação ao Robot desligada com sucesso!");
+			robotOn = false;
+		}
+	}
+
 	private void move(boolean backwards) {
 		int dis = distance;
-		//if(robotOn){
-			if(backwards) {
-			 dis = dis * -1;
+		if (robotOn) {
+			if (backwards) {
+				dis = dis * -1;
 			}
-			gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.MOVE}, new int[] {dis}, "");
-		//}
+			gestor.enviarMsg(new byte[] { Comunicar.GUI, Comunicar.MOVE }, new String[] { String.valueOf(dis) });
+		}
 	}
-	
+
 	private void turn(boolean right) {
 		byte val = Comunicar.ESQ;
-		if(robotOn) {
-			if(right) {
+		if (robotOn) {
+			if (right) {
 				val = Comunicar.DRT;
 			}
-			gestor.enviarMsg(new byte[] {Comunicar.GUI, val}, new int[] {angle, radius}, "");
-		}
-		
-	}
-	
-	private void stop() {
-		if(robotOn) {
-			gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.PARAR}, null, null);
+			gestor.enviarMsg(new byte[] { Comunicar.GUI, val },
+					new String[] { String.valueOf(radius), ",", String.valueOf(angle) });
 		}
 	}
 
-
+	private void stopMove() {
+		if (robotOn) {
+			gestor.enviarMsg(new byte[] { Comunicar.GUI, Comunicar.PARAR, Comunicar.TRUE }, Comunicar.EMPTY);
+		}
+	}
 
 	/**
 	 * Função que regista o texto no logger caso este esteja activo
@@ -191,7 +255,7 @@ public class Gui {
 		frame.setResizable(false);
 		frame.getContentPane().setBackground(Color.BLACK);
 		frame.setBounds(100, 100, 573, 588);
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		frame.setLocationRelativeTo(null);
 
@@ -215,6 +279,9 @@ public class Gui {
 			@Override
 			public void focusLost(FocusEvent e) {
 				name = txtNomeRobot.getText();
+				if (name.length() > 0) {
+					txtNomeRobot.setBackground(Color.WHITE);
+				}
 			}
 		});
 		txtNomeRobot.addKeyListener(new KeyAdapter() {
@@ -222,6 +289,9 @@ public class Gui {
 			public void keyPressed(KeyEvent event) {
 				if (event.getKeyChar() == KeyEvent.VK_ENTER) {
 					name = txtNomeRobot.getText();
+					if (name.length() > 0) {
+						txtNomeRobot.setBackground(Color.WHITE);
+					}
 				}
 			}
 		});
@@ -232,6 +302,12 @@ public class Gui {
 		txtNomeRobot.setColumns(10);
 
 		btnConectar = new JButton("Ligar");
+		btnConectar.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				connectRobot();
+			}
+		});
 		btnConectar.setToolTipText("Ligar Gestor");
 		btnConectar.setEnabled(true);
 		btnConectar.setFont(new Font("Tahoma", Font.PLAIN, 10));
@@ -278,7 +354,7 @@ public class Gui {
 		txtDistance.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if(e.getKeyChar() == KeyEvent.VK_ENTER) {
+				if (e.getKeyChar() == KeyEvent.VK_ENTER) {
 					distance = Integer.parseInt(txtDistance.getText());
 				}
 			}
@@ -293,7 +369,7 @@ public class Gui {
 		txtAngle.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if(e.getKeyChar() == KeyEvent.VK_ENTER) {
+				if (e.getKeyChar() == KeyEvent.VK_ENTER) {
 					angle = Integer.parseInt(txtAngle.getText());
 				}
 			}
@@ -308,7 +384,7 @@ public class Gui {
 		txtRadius.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if(e.getKeyChar() == KeyEvent.VK_ENTER) {
+				if (e.getKeyChar() == KeyEvent.VK_ENTER) {
 					radius = Integer.parseInt(txtRadius.getText());
 				}
 			}
@@ -334,7 +410,7 @@ public class Gui {
 		btnParar.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				stop();
+				stopMove();
 			}
 		});
 		btnParar.setFont(new Font("Tahoma", Font.PLAIN, 10));
@@ -349,7 +425,7 @@ public class Gui {
 			}
 		});
 		btnRecuar.setFont(new Font("Tahoma", Font.PLAIN, 10));
-		
+
 		btnRecuar.setBounds(272, 164, 76, 32);
 		panelRobot.add(btnRecuar);
 
@@ -360,7 +436,7 @@ public class Gui {
 				turn(false);
 			}
 		});
-		
+
 		btnEsquerda.setFont(new Font("Tahoma", Font.PLAIN, 10));
 		btnEsquerda.setBounds(173, 104, 76, 32);
 		panelRobot.add(btnEsquerda);
@@ -372,7 +448,7 @@ public class Gui {
 				turn(true);
 			}
 		});
-		
+
 		btnDireita.setFont(new Font("Tahoma", Font.PLAIN, 10));
 		btnDireita.setBounds(371, 104, 76, 32);
 		panelRobot.add(btnDireita);
@@ -390,7 +466,7 @@ public class Gui {
 		txtOffsetLeft.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if(e.getKeyChar() == KeyEvent.VK_ENTER) {
+				if (e.getKeyChar() == KeyEvent.VK_ENTER) {
 					offSetLeft = Integer.parseInt(txtOffsetLeft.getText());
 				}
 			}
@@ -405,7 +481,7 @@ public class Gui {
 		txtOffsetRight.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if(e.getKeyChar() == KeyEvent.VK_ENTER) {
+				if (e.getKeyChar() == KeyEvent.VK_ENTER) {
 					offSetRight = Integer.parseInt(txtOffsetRight.getText());
 				}
 			}
@@ -425,6 +501,22 @@ public class Gui {
 		panelRobot.add(lblOffsetDrt);
 
 		chckbxVaguear = new JCheckBox("Vaguear");
+		chckbxVaguear.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (chckbxVaguear.isSelected() && pGestor != null) {
+					try {
+						pVaguear = buildProcess(Comunicar.VAGUEAR).start();
+						logger("Vaguear Inicializado");
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				} else if (pVaguear != null && pGestor != null) {
+					logger("Vaguear desligado!");
+					pVaguear.destroy();
+				}
+			}
+		});
 		chckbxVaguear.setEnabled(true);
 		chckbxVaguear.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		chckbxVaguear.setForeground(Color.WHITE);
@@ -433,6 +525,22 @@ public class Gui {
 		panelRobot.add(chckbxVaguear);
 
 		chckbxEvitar = new JCheckBox("Evitar");
+		chckbxEvitar.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (chckbxEvitar.isSelected() && pGestor != null) {
+					try {
+						pEvitar = buildProcess(Comunicar.EVITAR).start();
+						logger("Evitar Inicializado");
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				} else if (pEvitar != null && pGestor != null) {
+					logger("Evitar Desligado");
+					pEvitar.destroy();
+				}
+			}
+		});
 		chckbxEvitar.setEnabled(true);
 		chckbxEvitar.setForeground(Color.WHITE);
 		chckbxEvitar.setFont(new Font("Tahoma", Font.PLAIN, 15));
@@ -444,18 +552,20 @@ public class Gui {
 		chckbxGestor.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if(chckbxGestor.isSelected()) {
+				if (chckbxGestor.isSelected()) {
 					try {
 						pGestor = buildProcess(Comunicar.GESTOR).start();
+						logger("Gestor Inicializado");
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
-				}else {
-					if(pGestor != null) {
+				} else {
+					if (pGestor != null) {
+						logger("Gestor desligado!");
 						pGestor.destroy();
 					}
 				}
-				
+
 			}
 		});
 		chckbxGestor.setForeground(Color.WHITE);

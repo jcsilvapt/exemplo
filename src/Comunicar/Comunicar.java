@@ -16,10 +16,9 @@ public class Comunicar implements iMensagem {
 	FileLock lock;
 	final int BUFFER_MAX = 30;
 
-	private boolean suspend = false;
-
 	/* Caixas */
 
+	@SuppressWarnings("resource")
 	public Comunicar(String nome) {
 		caixaMsg = new File(".\\coms\\" + nome + ".dat");
 		try {
@@ -35,7 +34,7 @@ public class Comunicar implements iMensagem {
 		}
 	}
 
-	public void enviarMsg(byte[] msg, int[] value, String name) {
+	public void enviarMsg(byte[] msg, String[] name) {
 		lock = null;
 		try {
 			for (;;) {
@@ -66,12 +65,10 @@ public class Comunicar implements iMensagem {
 			buffer.put(msg[x]);
 		}
 		buffer.put((byte) '!');
-		for(int i = 0; i < value.length; ++i) {
-			buffer.putInt(value[i]);
-		}
-		buffer.put((byte) '!');
-		for (int y = 0; y < name.trim().length(); ++y) {
-			buffer.putChar(name.charAt(y));
+		for(int i = 0; i < name.length; ++i) {
+			for(int y = 0; y < name[i].trim().length(); ++y) {
+				buffer.putChar(name[i].charAt(y));
+			}
 		}
 		buffer.putChar('\0');
 	}
@@ -108,8 +105,6 @@ public class Comunicar implements iMensagem {
 		StringBuilder msg = new StringBuilder();
 		char aux;
 		byte var;
-		boolean con = true;
-		int val;
 		boolean ptVirgula = false;
 		while ((var = buffer.get()) != '!') {
 			if (!ptVirgula) {
@@ -119,32 +114,17 @@ public class Comunicar implements iMensagem {
 				msg.append(";" + var);
 			}
 		}
-		System.out.println("1 : " + msg.toString());
-		while(con) {
-			if(!ptVirgula) {
-				if(buffer.get(buffer.position()) == '!'){
-					con = true;
-				}
-				msg.append(buffer.getInt());
-				ptVirgula = true;
-			}else {
-				if(buffer.get(buffer.position()+1) == '!'){
-					con = true;
-				}
-				msg.append(";"+ buffer.getInt());
-			}
-		}
-		System.out.println("2 : " + msg.toString());
 		while ((aux = buffer.getChar()) != '\0') {
-			if (ptVirgula) {
+			if(aux == ',') {
+				msg.append(";");
+			}else if (ptVirgula) {
 				msg.append(";" + String.valueOf(aux));
 				ptVirgula = false;
 			} else {
 				msg.append(String.valueOf(aux));
 			}
 		}
-		System.out.println("3 : " + msg.toString());
-		//buffer.put(0, (byte) 0);
+		buffer.put(0, (byte) 0);
 		return msg.toString();
 
 	}
@@ -156,27 +136,4 @@ public class Comunicar implements iMensagem {
 			e.printStackTrace();
 		}
 	}
-
-	public static int delay(int valor, boolean raio, int angulo) {
-
-		int convCm = 100;
-		int convMs = 5000;
-		int delay = 0;
-		int aux = valor;
-
-		if (raio) {
-			aux = (int) (2. * Math.PI * valor);
-			aux = aux * angulo / 254;
-		}
-
-		delay = aux * convMs / convCm;
-		System.out.println("esperar: " + delay + "ms");
-		return delay;
-	}
-	
-	public static void main(String[] args) {
-		Comunicar teste = new Comunicar("gestor");
-		teste.receberMsg();
-	}
-
 }

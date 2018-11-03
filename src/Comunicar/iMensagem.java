@@ -21,21 +21,22 @@ public interface iMensagem {
 	public static byte SPD		= 9;
 	
 	/* */
-	public static byte STOQUE	= 10;
-	public static byte RTOQUE	= 11;
+	public static byte SENSOR	= 10;
 	
-	public static byte SSUSP	= 12;
-	public static byte RSUSP	= 13;
-	
-	public static byte STOP		= 14; // Supostamente para enviar e pedir aos processos para pararem
+	public static byte AVOIDON  = 11;	
+	public static byte STOP		= 12; // Supostamente para enviar e pedir aos processos para pararem
 	
 	public static byte FALSE 	= 0;
 	public static byte TRUE 	= 1;
 	//public static byte RESPONDERTOQUE = 9;
 	
+	public static int DEFAULTWAIT = 250;
+	
+	public final String[] EMPTY = new String[] {""};
 	
 	
-	void enviarMsg(byte[] msg, int[] value ,String name);
+	
+	void enviarMsg(byte[] msg, String[] value);
 	
 	String receberMsg();
 

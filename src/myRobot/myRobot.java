@@ -4,7 +4,7 @@ public class myRobot {
 	private final String ROBOTNAME = "EV3";
 
 	public myRobot() {
-		System.out.println("myRobot - Inicializado");
+		System.out.println("myRobot - Classe Inicializada");
 	}
 
 	public boolean OpenEV3(String name) {
