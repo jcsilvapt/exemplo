@@ -1,8 +1,5 @@
 package Gestor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import Comunicar.Comunicar;
 import myRobot.myRobot;
 
@@ -10,7 +7,8 @@ public class Gestor {
 
 	// Variaveis
 	private String msg;
-
+	private boolean toBreak = false;
+	
 	// Caixas de Correio
 	@SuppressWarnings("unused")
 	private Comunicar inbox, gui, vaguear, evitar;
@@ -18,7 +16,6 @@ public class Gestor {
 	// Ligaçoes ao Robot
 	private myRobot robot;
 	private boolean avoidON = false;
-	private List<String> commands = new ArrayList<String>();
 
 	public Gestor() {
 		System.out.println("Gestor Inicializado");
@@ -45,10 +42,9 @@ public class Gestor {
 		}
 	}
 
-	private void decode(String message) {
-		String[] campos = message.split(";");
+	private void decode(String message) throws InterruptedException {
 
-		int wait = Comunicar.DEFAULTWAIT;
+		String[] campos = message.split(";");
 
 		switch (Byte.parseByte(campos[0])) {
 		case Comunicar.GUI:
@@ -56,23 +52,38 @@ public class Gestor {
 			switch (Byte.parseByte(campos[1])) {
 			case Comunicar.MOVE:
 				robot.Reta(Integer.parseInt(campos[2]));
-				wait = delay(Integer.parseInt(campos[2]), false, 0);
 				break;
 			case Comunicar.ESQ:
 				robot.CurvarEsquerda(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
-				wait = delay(Integer.parseInt(campos[2]), true, Integer.parseInt(campos[3]));
 				break;
 			case Comunicar.DRT:
 				robot.CurvarDireita(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
-				wait = delay(Integer.parseInt(campos[2]), true, Integer.parseInt(campos[3]));
 				break;
 			case Comunicar.PARAR:
 				switch (Byte.parseByte(campos[2])) {
 				case Comunicar.TRUE:
 					robot.Parar(true);
 					break;
-				default:
+				case Comunicar.FALSE:
 					robot.Parar(false);
+					break;
+				}
+			case Comunicar.STOP:
+				switch (Byte.parseByte(campos[2])) {
+				case Comunicar.GESTOR:
+					vaguear.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
+					Thread.sleep(10);
+					evitar.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
+					Thread.sleep(10);
+					toBreak = true;
+					break;
+				case Comunicar.EVITAR:
+					evitar.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
+					break;
+				case Comunicar.VAGUEAR:
+					vaguear.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
+					break;
+				default:
 					break;
 				}
 				break;
@@ -97,81 +108,57 @@ public class Gestor {
 			break;
 		case Comunicar.EVITAR:
 			switch (Byte.parseByte(campos[1])) {
-			case Comunicar.MOVE:
-				robot.Reta(Integer.parseInt(campos[2]));
-				wait = delay(Integer.parseInt(campos[2]), false, 0);
-				break;
-			case Comunicar.ESQ:
-				robot.CurvarEsquerda(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
-				wait = delay(Integer.parseInt(campos[2]), true, Integer.parseInt(campos[3]));
+			case Comunicar.SENSOR:
+				requestSensor();
 				break;
 			case Comunicar.PARAR:
 				robot.Parar(true);
 				break;
-			case Comunicar.SENSOR:
-				requestSensor();
+			case Comunicar.MOVE:
+				robot.Reta(Integer.parseInt(campos[2]));
+				break;
+			case Comunicar.ESQ:
+				robot.CurvarEsquerda(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
 				break;
 			case Comunicar.AVOIDON:
 				switch (Byte.parseByte(campos[2])) {
 				case Comunicar.TRUE:
+					System.out.println("gestor avoidOn");
 					avoidON = true;
 					break;
 				case Comunicar.FALSE:
+					System.out.println("gestor avoidOff");
 					avoidON = false;
 					break;
 				}
-			default:
-				break;
 			}
 			break;
-		default:
-			break;
-		}
-		try {
-			Thread.sleep(wait);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 	}
 
 	private void requestSensor() {
-		if (robot.SensorToque()) {
+		if (avoidON) {
 			evitar.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.SENSOR, Comunicar.TRUE }, Comunicar.EMPTY);
 		} else {
-			evitar.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.SENSOR, Comunicar.FALSE }, Comunicar.EMPTY);
+			if (robot.SensorToque()) {
+				evitar.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.SENSOR, Comunicar.TRUE }, Comunicar.EMPTY);
+			} else {
+				evitar.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.SENSOR, Comunicar.FALSE }, Comunicar.EMPTY);
+			}
 		}
-	}
-
-	private int delay(int valor, boolean raio, int angulo) {
-		// Robot demora 5 segundos a precorrer 100 cm
-		int convCm = 100;
-		int convMs = 5000;
-		int delay = 0;
-		int aux = valor;
-
-		if (raio) {
-			aux = (int) (2. * Math.PI * valor);
-			aux = aux * angulo / 360;
-		}
-
-		delay = aux * convMs / convCm;
-		System.out.println("Gestor [delay]: " + delay + "ms");
-		return delay;
 	}
 
 	public void run() throws InterruptedException {
 		for (;;) {
-			int defaultWAIT;
-			if (avoidON) {
-				defaultWAIT = 1;
-			} else {
-				defaultWAIT = 250;
-				msg = inbox.receberMsg();
-				System.out.println("Gestor [MSG] : " + msg);
-				decode(msg);
-				Thread.sleep(defaultWAIT);
-			}
+			msg = inbox.receberMsg();
+			//System.out.println("Gestor [READ MSG] : " + msg);
+			decode(msg);
+			Thread.sleep(125);
+			if(toBreak)
+				break;
 		}
+		inbox.enviarMsg(new byte[] { Comunicar.GESTOR}, Comunicar.EMPTY);
+		inbox.fecharCanal();
 	}
 
 	public static void main(String[] args) {

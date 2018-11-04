@@ -3,15 +3,12 @@ package GUI;
 import java.awt.Color;
 import java.awt.ComponentOrientation;
 import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
 import java.io.IOException;
 
 import javax.swing.JButton;
@@ -23,11 +20,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.Timer;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-
-import com.sun.glass.events.WindowEvent;
 
 import Comunicar.Comunicar;
 
@@ -81,7 +75,7 @@ public class Gui extends Thread {
 		for (;;) {
 			String msg = inbox.receberMsg();
 			decode(msg);
-			System.out.println("GUI [MSG]: " + msg);
+			//System.out.println("GUI [READ MSG]: " + msg);
 			try {
 				Thread.sleep(250);
 			} catch (InterruptedException e) {
@@ -119,7 +113,6 @@ public class Gui extends Thread {
 		case Comunicar.OPEN:
 			switch (Byte.parseByte(campos[2])) {
 			case Comunicar.TRUE:
-				System.out.println("i'm probably working");
 				robotStatus(true);
 				break;
 			case Comunicar.FALSE:
@@ -255,7 +248,7 @@ public class Gui extends Thread {
 		frame.setResizable(false);
 		frame.getContentPane().setBackground(Color.BLACK);
 		frame.setBounds(100, 100, 573, 588);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		frame.setLocationRelativeTo(null);
 
@@ -512,6 +505,7 @@ public class Gui extends Thread {
 						e1.printStackTrace();
 					}
 				} else if (pVaguear != null && pGestor != null) {
+					gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.STOP, Comunicar.VAGUEAR}, Comunicar.EMPTY);
 					logger("Vaguear desligado!");
 					pVaguear.destroy();
 				}
@@ -536,6 +530,7 @@ public class Gui extends Thread {
 						e1.printStackTrace();
 					}
 				} else if (pEvitar != null && pGestor != null) {
+					gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.STOP, Comunicar.EVITAR}, Comunicar.EMPTY);
 					logger("Evitar Desligado");
 					pEvitar.destroy();
 				}
@@ -561,6 +556,12 @@ public class Gui extends Thread {
 					}
 				} else {
 					if (pGestor != null) {
+						gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.STOP, Comunicar.GESTOR}, Comunicar.EMPTY);
+						try {
+							Thread.sleep(50);
+						} catch (InterruptedException e1) {
+							e1.printStackTrace();
+						}
 						logger("Gestor desligado!");
 						pGestor.destroy();
 					}

@@ -1,15 +1,17 @@
 package Vaguear;
 
 import Comunicar.Comunicar;
+import Utils.Utils;
 
 public class Vaguear {
 
 	// Caixas de Correio
 	Comunicar inbox, gestor;
 	
-	private final int MAXDISTANCE 	= 250; // cm (será pouco :\?)
-	private final int MAXANGLE		= 360; // Probably...
+	private final int MAXDISTANCE 	= 50; // cm (será pouco :\?)
+	private final int MAXANGLE		= 120; // Probably...
 	
+	private boolean toBreak = false;
 	
 	public Vaguear() {
 		System.out.println("Vaguear -  Classe Inicializada");
@@ -19,9 +21,16 @@ public class Vaguear {
 	}
 	
 	private void decode(String message) {
-		String[] campo = message.split(";");
+		String[] campos = message.split(";");
 		
-		// TODO
+		switch (Byte.parseByte(campos[1])) {
+		case Comunicar.STOP:
+			toBreak = true;
+			break;
+
+		default:
+			break;
+		}
 	}
 	
 	private void randomMove() {
@@ -29,6 +38,8 @@ public class Vaguear {
 		int move;
 		int radius;
 		int angle;
+		
+		int delay = 0;
 	
 		switch ((byte) action) {
 		case Comunicar.MOVE:
@@ -37,19 +48,29 @@ public class Vaguear {
 				move = move * -1;
 			}
 			gestor.enviarMsg(new byte[] {Comunicar.VAGUEAR,  Comunicar.MOVE}, new String[] {String.valueOf(move)});
+			if(move < 0)
+				move = move *-1;
+			delay = Utils.delay(move, false, 0);
 			break;
 		case Comunicar.ESQ:
 			radius = (int) (1 + Math.random()*MAXDISTANCE);
 			angle = (int) (1 + Math.random()*MAXANGLE);
 			gestor.enviarMsg(new byte[] {Comunicar.VAGUEAR,  Comunicar.ESQ}, new String[] {String.valueOf(radius), ",", String.valueOf(angle)});
+			delay = Utils.delay(radius, true, angle);
 			break;
 		case Comunicar.DRT:
 			radius = (int) (1 + Math.random()*MAXDISTANCE);
 			angle = (int) (1 + Math.random()*MAXANGLE);
 			gestor.enviarMsg(new byte[] {Comunicar.VAGUEAR,  Comunicar.DRT}, new String[] {String.valueOf(radius), ",", String.valueOf(angle)});
+			delay = Utils.delay(radius, true, angle);
 			break;		
 		default:
 			break;
+		}
+		try {
+			Thread.sleep(delay);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -59,9 +80,13 @@ public class Vaguear {
 			String msg = inbox.receberMsg();
 			decode(msg);
 			randomMove();
-			Thread.sleep(Comunicar.DEFAULTWAIT);
+			Thread.sleep(350);
 			inbox.enviarMsg(new byte[] {Comunicar.EVITAR, Comunicar.TRUE}, Comunicar.EMPTY);
+			if(toBreak) 
+				break;
 		}
+		inbox.fecharCanal();
+		System.out.println("Vaguear [Disable] - Restart App");
 	}
 	
 	

@@ -1,7 +1,7 @@
 package Comunicar;
 
 public interface iMensagem {
-	
+	/* Processos */
 	public static byte GESTOR 	= 1;
 	public static byte GUI 		= 2;
 	public static byte VAGUEAR 	= 3;
@@ -20,15 +20,15 @@ public interface iMensagem {
 	public static byte VMD		= 8;
 	public static byte SPD		= 9;
 	
-	/* */
+	/* Relacionado com Sensores */
 	public static byte SENSOR	= 10;
-	
 	public static byte AVOIDON  = 11;	
-	public static byte STOP		= 12; // Supostamente para enviar e pedir aos processos para pararem
+	
+	/* Desligar processos */
+	public static byte STOP		= 12;
 	
 	public static byte FALSE 	= 0;
 	public static byte TRUE 	= 1;
-	//public static byte RESPONDERTOQUE = 9;
 	
 	public static int DEFAULTWAIT = 250;
 	
@@ -39,7 +39,5 @@ public interface iMensagem {
 	void enviarMsg(byte[] msg, String[] value);
 	
 	String receberMsg();
-
-	//void descodificar(String msg);
 	
 }
