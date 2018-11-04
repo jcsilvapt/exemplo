@@ -10,7 +10,6 @@ public class Gestor {
 	private boolean toBreak = false;
 	
 	// Caixas de Correio
-	@SuppressWarnings("unused")
 	private Comunicar inbox, gui, vaguear, evitar;
 
 	// Ligaçoes ao Robot
