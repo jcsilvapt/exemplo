@@ -53,12 +53,9 @@ public class Gui extends Thread {
 	boolean robotOn = false;
 
 	// Paths Processos / Variaveis
-	private final String[] GESTOR = new String[] { "Java", "-jar",
-			"S:\\ISEL\\3º Semestre\\FSO\\exemplo\\src\\Gestor\\Gestor.jar" };
-	private final String[] VAGUEAR = new String[] { "Java", "-jar",
-			"S:\\ISEL\\3º Semestre\\FSO\\exemplo\\src\\Vaguear\\Vaguear.jar" };
-	private final String[] EVITAR = new String[] { "Java", "-jar",
-			"S:\\ISEL\\3º Semestre\\FSO\\exemplo\\\\src\\Evitar\\Evitar.jar" };
+	private final String[] GESTOR = new String[] { "Java", "-jar", "S:\\JAVA\\exemplo\\src\\Gestor\\Gestor.jar" };
+	private final String[] VAGUEAR = new String[] { "Java", "-jar", "S:\\JAVA\\exemplo\\src\\Vaguear\\Vaguear.jar" };
+	private final String[] EVITAR = new String[] { "Java", "-jar", "S:\\JAVA\\exemplo\\src\\Evitar\\Evitar.jar" };
 
 	private Process pGestor, pVaguear, pEvitar;
 
@@ -75,7 +72,7 @@ public class Gui extends Thread {
 		for (;;) {
 			String msg = inbox.receberMsg();
 			decode(msg);
-			//System.out.println("GUI [READ MSG]: " + msg);
+			// System.out.println("GUI [READ MSG]: " + msg);
 			try {
 				Thread.sleep(250);
 			} catch (InterruptedException e) {
@@ -505,7 +502,7 @@ public class Gui extends Thread {
 						e1.printStackTrace();
 					}
 				} else if (pVaguear != null && pGestor != null) {
-					gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.STOP, Comunicar.VAGUEAR}, Comunicar.EMPTY);
+					gestor.enviarMsg(new byte[] { Comunicar.GUI, Comunicar.STOP, Comunicar.VAGUEAR }, Comunicar.EMPTY);
 					logger("Vaguear desligado!");
 					pVaguear.destroy();
 				}
@@ -530,7 +527,7 @@ public class Gui extends Thread {
 						e1.printStackTrace();
 					}
 				} else if (pEvitar != null && pGestor != null) {
-					gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.STOP, Comunicar.EVITAR}, Comunicar.EMPTY);
+					gestor.enviarMsg(new byte[] { Comunicar.GUI, Comunicar.STOP, Comunicar.EVITAR }, Comunicar.EMPTY);
 					logger("Evitar Desligado");
 					pEvitar.destroy();
 				}
@@ -556,7 +553,8 @@ public class Gui extends Thread {
 					}
 				} else {
 					if (pGestor != null) {
-						gestor.enviarMsg(new byte[] {Comunicar.GUI, Comunicar.STOP, Comunicar.GESTOR}, Comunicar.EMPTY);
+						gestor.enviarMsg(new byte[] { Comunicar.GUI, Comunicar.STOP, Comunicar.GESTOR },
+								Comunicar.EMPTY);
 						try {
 							Thread.sleep(50);
 						} catch (InterruptedException e1) {

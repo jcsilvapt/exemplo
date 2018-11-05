@@ -8,7 +8,7 @@ public class Gestor {
 	// Variaveis
 	private String msg;
 	private boolean toBreak = false;
-	
+
 	// Caixas de Correio
 	private Comunicar inbox, gui, vaguear, evitar;
 
@@ -44,68 +44,7 @@ public class Gestor {
 	private void decode(String message) throws InterruptedException {
 
 		String[] campos = message.split(";");
-
-		switch (Byte.parseByte(campos[0])) {
-		case Comunicar.GUI:
-		case Comunicar.VAGUEAR:
-			switch (Byte.parseByte(campos[1])) {
-			case Comunicar.MOVE:
-				robot.Reta(Integer.parseInt(campos[2]));
-				break;
-			case Comunicar.ESQ:
-				robot.CurvarEsquerda(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
-				break;
-			case Comunicar.DRT:
-				robot.CurvarDireita(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
-				break;
-			case Comunicar.PARAR:
-				switch (Byte.parseByte(campos[2])) {
-				case Comunicar.TRUE:
-					robot.Parar(true);
-					break;
-				case Comunicar.FALSE:
-					robot.Parar(false);
-					break;
-				}
-			case Comunicar.STOP:
-				switch (Byte.parseByte(campos[2])) {
-				case Comunicar.GESTOR:
-					vaguear.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
-					Thread.sleep(10);
-					evitar.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
-					Thread.sleep(10);
-					toBreak = true;
-					break;
-				case Comunicar.EVITAR:
-					evitar.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
-					break;
-				case Comunicar.VAGUEAR:
-					vaguear.enviarMsg(new byte[] {Comunicar.GESTOR, Comunicar.STOP}, Comunicar.EMPTY);
-					break;
-				default:
-					break;
-				}
-				break;
-			case Comunicar.OPEN:
-				System.out.println(campos[campos.length - 1]);
-				connectRobot(campos[campos.length - 1]);
-				break;
-			case Comunicar.CLOSE:
-				gui.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.CLOSE }, Comunicar.EMPTY);
-				robot.CloseEV3();
-				break;
-			case Comunicar.VME:
-				robot.AjustarVME(Integer.parseInt(campos[2]));
-				break;
-			case Comunicar.VMD:
-				robot.AjustarVMD(Integer.parseInt(campos[2]));
-				break;
-			case Comunicar.SPD:
-				robot.SetVelocidade(Integer.parseInt(campos[2]));
-				break;
-			}
-			break;
-		case Comunicar.EVITAR:
+		if (avoidON && Byte.parseByte(campos[0]) == Comunicar.EVITAR) {
 			switch (Byte.parseByte(campos[1])) {
 			case Comunicar.SENSOR:
 				requestSensor();
@@ -130,8 +69,98 @@ public class Gestor {
 					avoidON = false;
 					break;
 				}
+				break;
 			}
-			break;
+		} else if(!avoidON){
+			switch (Byte.parseByte(campos[0])) {
+			case Comunicar.GUI:
+			case Comunicar.VAGUEAR:
+				switch (Byte.parseByte(campos[1])) {
+				case Comunicar.MOVE:
+					robot.Reta(Integer.parseInt(campos[2]));
+					break;
+				case Comunicar.ESQ:
+					robot.CurvarEsquerda(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
+					break;
+				case Comunicar.DRT:
+					robot.CurvarDireita(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
+					break;
+				case Comunicar.PARAR:
+					switch (Byte.parseByte(campos[2])) {
+					case Comunicar.TRUE:
+						robot.Parar(true);
+						break;
+					case Comunicar.FALSE:
+						robot.Parar(false);
+						break;
+					}
+				case Comunicar.STOP:
+					switch (Byte.parseByte(campos[2])) {
+					case Comunicar.GESTOR:
+						vaguear.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.STOP }, Comunicar.EMPTY);
+						Thread.sleep(10);
+						evitar.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.STOP }, Comunicar.EMPTY);
+						Thread.sleep(10);
+						toBreak = true;
+						break;
+					case Comunicar.EVITAR:
+						evitar.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.STOP }, Comunicar.EMPTY);
+						break;
+					case Comunicar.VAGUEAR:
+						vaguear.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.STOP }, Comunicar.EMPTY);
+						break;
+					default:
+						break;
+					}
+					break;
+				case Comunicar.OPEN:
+					System.out.println(campos[campos.length - 1]);
+					connectRobot(campos[campos.length - 1]);
+					break;
+				case Comunicar.CLOSE:
+					gui.enviarMsg(new byte[] { Comunicar.GESTOR, Comunicar.CLOSE }, Comunicar.EMPTY);
+					robot.CloseEV3();
+					break;
+				case Comunicar.VME:
+					robot.AjustarVME(Integer.parseInt(campos[2]));
+					break;
+				case Comunicar.VMD:
+					robot.AjustarVMD(Integer.parseInt(campos[2]));
+					break;
+				case Comunicar.SPD:
+					robot.SetVelocidade(Integer.parseInt(campos[2]));
+					break;
+				}
+				break;
+			case Comunicar.EVITAR:
+				switch (Byte.parseByte(campos[1])) {
+				case Comunicar.SENSOR:
+					requestSensor();
+					break;
+				case Comunicar.PARAR:
+					robot.Parar(true);
+					break;
+				case Comunicar.MOVE:
+					robot.Reta(Integer.parseInt(campos[2]));
+					break;
+				case Comunicar.ESQ:
+					robot.CurvarEsquerda(Integer.parseInt(campos[2]), Integer.parseInt(campos[3]));
+					break;
+				case Comunicar.AVOIDON:
+					switch (Byte.parseByte(campos[2])) {
+					case Comunicar.TRUE:
+						System.out.println("gestor avoidOn");
+						avoidON = true;
+						break;
+					case Comunicar.FALSE:
+						System.out.println("gestor avoidOff");
+						avoidON = false;
+						break;
+					}
+					break;
+				}
+				break;
+			}
 		}
 	}
 
@@ -150,13 +179,13 @@ public class Gestor {
 	public void run() throws InterruptedException {
 		for (;;) {
 			msg = inbox.receberMsg();
-			//System.out.println("Gestor [READ MSG] : " + msg);
+			// System.out.println("Gestor [READ MSG] : " + msg);
 			decode(msg);
-			Thread.sleep(125);
-			if(toBreak)
+			Thread.sleep(50);
+			if (toBreak)
 				break;
 		}
-		inbox.enviarMsg(new byte[] { Comunicar.GESTOR}, Comunicar.EMPTY);
+		inbox.enviarMsg(new byte[] { Comunicar.GESTOR }, Comunicar.EMPTY);
 		inbox.fecharCanal();
 	}
 

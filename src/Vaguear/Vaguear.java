@@ -48,8 +48,6 @@ public class Vaguear {
 				move = move * -1;
 			}
 			gestor.enviarMsg(new byte[] {Comunicar.VAGUEAR,  Comunicar.MOVE}, new String[] {String.valueOf(move)});
-			if(move < 0)
-				move = move *-1;
 			delay = Utils.delay(move, false, 0);
 			break;
 		case Comunicar.ESQ:

@@ -27,6 +27,13 @@ public class Evitar {
 
 		switch (Byte.parseByte(campos[1])) {
 		case Comunicar.STOP:
+//			gestor.enviarMsg(new byte[] { Comunicar.EVITAR, Comunicar.AVOIDON, Comunicar.FALSE }, Comunicar.EMPTY);
+//			try {
+//				Thread.sleep(100);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//			phase = 0;
 			toBreak = true;
 			break;
 		case Comunicar.SENSOR:
@@ -58,6 +65,7 @@ public class Evitar {
 			gestor.enviarMsg(new byte[] { Comunicar.EVITAR, Comunicar.ESQ }, TURN);
 			delay = Utils.delay(1, true, 90);
 		} else if (phase == 4) {
+			System.out.println("AVOID OFF PAH!");
 			gestor.enviarMsg(new byte[] { Comunicar.EVITAR, Comunicar.AVOIDON, Comunicar.FALSE }, Comunicar.EMPTY);
 			phase = 0;
 			count = false;
@@ -81,7 +89,12 @@ public class Evitar {
 				e.printStackTrace();
 			}
 		}
-		inbox.enviarMsg(new byte[] { Comunicar.EVITAR}, Comunicar.EMPTY);
+		gestor.enviarMsg(new byte[] { Comunicar.EVITAR, Comunicar.AVOIDON, Comunicar.FALSE }, Comunicar.EMPTY);
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		inbox.fecharCanal();
 	}
 
