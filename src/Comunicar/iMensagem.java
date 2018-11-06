@@ -21,7 +21,7 @@ public interface iMensagem {
 	public static byte SPD		= 9;
 	
 	/* Relacionado com Sensores */
-	public static byte SENSOR	= 10;
+	public static byte SENSOR	= 14;
 	public static byte AVOIDON  = 11;	
 	
 	/* Desligar processos */

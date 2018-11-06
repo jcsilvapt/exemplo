@@ -53,9 +53,9 @@ public class Gui extends Thread {
 	boolean robotOn = false;
 
 	// Paths Processos / Variaveis
-	private final String[] GESTOR = new String[] { "Java", "-jar", "S:\\JAVA\\exemplo\\src\\Gestor\\Gestor.jar" };
-	private final String[] VAGUEAR = new String[] { "Java", "-jar", "S:\\JAVA\\exemplo\\src\\Vaguear\\Vaguear.jar" };
-	private final String[] EVITAR = new String[] { "Java", "-jar", "S:\\JAVA\\exemplo\\src\\Evitar\\Evitar.jar" };
+	private final String[] GESTOR = new String[] { "Java", "-jar", ".\\src\\Gestor.jar" };
+	private final String[] VAGUEAR = new String[] { "Java", "-jar", ".\\src\\Vaguear\\Vaguear.jar" };
+	private final String[] EVITAR = new String[] { "Java", "-jar", ".\\src\\Evitar\\Evitar.jar" };
 
 	private Process pGestor, pVaguear, pEvitar;
 
